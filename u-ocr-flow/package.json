@@ -1,0 +1,9 @@
+{
+  "name": "u-ocr-flow",
+  "version": "1.0.0",
+  "description": "OCR Tool for U-Tech Project",
+  "main": "index.html",
+  "dependencies": {
+    "mongodb": "^6.5.0"
+  }
+}

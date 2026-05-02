@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U-OCR Flow | U-Tech Project®</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-hover: #0056b3;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: -1px;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .tagline {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 3D Glassmorphism Card */
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        #drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 30px;
+        }
+
+        #drop-zone.hover {
+            border-color: var(--primary);
+            background: rgba(0, 123, 255, 0.1);
+            transform: scale(1.01);
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.2);
+        }
+
+        /* Modern Table Style */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            text-align: left;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+
+        .img-preview {
+            width: 100px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+
+        .img-preview:hover {
+            transform: scale(2.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 3D Styled Button */
+        .btn-export {
+            display: block;
+            width: 100%;
+            margin-top: 30px;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #15803d;
+            transition: all 0.1s;
+        }
+
+        .btn-export:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #15803d;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>U-OCR Flow</h1>
+        <div class="tagline">U-Tech Project®</div>
+    </div>
+
+    <div class="container">
+        <div id="drop-zone">
+            <svg style="width:48px;height:48px;fill:#64748b;margin-bottom:15px" viewBox="0 0 24 24">
+                <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+            <p>Drag images here or <strong>Paste (Ctrl+V)</strong></p>
+            <span style="font-size: 0.8rem; color: #64748b;">Supports JPEG, PNG, WEBP, BMP</span>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Visual</th>
+                        <th>Data Extraction</th>
+                        <th>Cloud Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn-export" onclick="downloadExcel()">Generate & Download Master Excel</button>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const tableBody = document.getElementById('table-body');
+        let accumulatedData = [];
+
+        // Handle Paste (Ctrl+V)
+        window.addEventListener('paste', e => {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf("image") !== -1) {
+                    processImage(item.getAsFile());
+                }
+            }
+        });
+
+        // Handle Drag & Drop
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('hover');
+            [...e.dataTransfer.files].forEach(processImage);
+        });
+
+        async function processImage(file) {
+            const row = document.createElement('tr');
+            const imgUrl = URL.createObjectURL(file);
+            
+            row.innerHTML = `
+                <td><img src="${imgUrl}" class="img-preview"></td>
+                <td class="ocr-text" style="color: #94a3b8; font-style: italic;">Analyzing...</td>
+                <td><span class="status-badge">Pending</span></td>
+            `;
+            tableBody.prepend(row); // Most recent at the top
+
+            try {
+                const result = await Tesseract.recognize(file, 'eng');
+                const cleanText = result.data.text.replace(/\n/g, ' ').trim();
+                row.querySelector('.ocr-text').innerText = cleanText;
+                row.querySelector('.ocr-text').style.color = "#f8fafc";
+                row.querySelector('.ocr-text').style.fontStyle = "normal";
+
+                const payload = { text: cleanText, timestamp: new Date().toLocaleString(), fileName: file.name };
+                
+                // Save to MongoDB via Vercel API
+                const response = await fetch('/api/store', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    row.querySelector('.status-badge').innerText = "Stored in DB";
+                    row.querySelector('.status-badge').style.background = "#166534";
+                    accumulatedData.push(payload);
+                }
+            } catch (err) {
+                row.querySelector('.status-badge').innerText = "Sync Error";
+                row.querySelector('.status-badge').style.background = "#991b1b";
+            }
+        }
+
+        function downloadExcel() {
+            if(accumulatedData.length === 0) return alert("No data to export!");
+            const worksheet = XLSX.utils.json_to_sheet(accumulatedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "U-OCR Data");
+            XLSX.writeFile(workbook, "U-Tech_OCR_Export.xlsx");
+        }
+    </script>
+</body>
+</html>
